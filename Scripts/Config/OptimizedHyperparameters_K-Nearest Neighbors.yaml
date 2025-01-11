@@ -1,0 +1,6 @@
+algorithm: ball_tree
+leaf_size: 22
+metric: minkowski
+n_neighbors: 8
+p: 1
+weights: uniform

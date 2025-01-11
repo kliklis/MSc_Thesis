@@ -1,0 +1,54 @@
+?why values on Ba has -
+?how to separate those values that sticks each other
+?what are p1c	p1m	p4a etc
+?aks cassie for distibutions
+?should we drop non completed plays
+
+!must make A converted correctly to ml friendly
+!must handle Nan values for smote
+
+
+!note and replace features ranges for A based on Ba
+!finds the best 3 ml alg. and train 3 models with A. 
+!Then use those models to predict/give labels to Ba
+
+
+!Then use A with/without Ba to give labels to Bb.
+!Then do active learning and unsupervised to Bb
+
+
+
+Chapter 4 flow:
+-main orientation of the implimentation based on
+	-imbalanced classes by nature
+	-difficult to obtain data (we cannot find thousands of player so we can extract data, or even we get data we cannot 	easily determine the labels cause we need adhd diagnosed)
+	-multiple data sources (generated or real players' data) with different structures, some labeled some unlabeled
+-Dataset structure (in detail field by feature by feature)
+	-Structure analysis
+	-Key differences between them
+	-(Labeled,Unlabeled, Clustered)
+-Dataset preprocess
+	-Different sources structure compliance
+	-Additional Features
+-Workflow Overview
+	-Starting of each of the Dataset, what steps to take...
+	-[A Labeled] - Generation/Preprocess/3 Algs Selection/Train/Eval./Finetune -> {Supervised Models Set A}
+	-[Ba Unlabeled] - Convertion/Preprocess/*2 Algs Selection/Train/Eval/Finetune -> {Unsupervised Models Set Bb}
+		AND *use (Models Set A) (separately or with voting) to label [Ba Unlabeled] -> [Ba Labeled]
+	-[Ba Labeled] - Evaluated {Supervised Models Set A}
+	-[Bb Unlabeled] - Convertion/Preprocess/*2 Algs Selection/Train/Eval/Finetune
+		AND Evaluation {Unsupervised Models Set Bb}
+	-Also use Active Learning / Semi-supervised learning in [B] dataset (B=Ba+Bb)
+
+A Dataset Example (has the official projects dataset format):
+player_id	click	completion_progress	session_duration	escaped	input_forward	input_backward	input_left	input_right	riddle_1	riddle_2	riddle_3	riddle_4	riddle_5	ommision_errors	commision_errors	distraction_1_timestamps	distraction_2_timestamps	distraction_3_timestamps	has_adhd
+1	35	100	600.33	1	312	154	166	257	342.6745068774148,350.29821102301946,350.8329182962773	380.25602763499353,382.5037685589253,429.4008699538788,502.1281020793077	519.5840954921064,521.5338713069173,540.3530912131564,548.1367261123264,587.045447561639	600.5980864254102,602.7534413326418,603.723839033178,604.8299530607233	612.1368621890269,612.5174559277477,615.3713637755752	0,3,3,3,0,4	4,3,1,2,3,1	192.61,200.8,210.57	275.12,276.66,281.49	305.9,311.43,316.75	0
+2	98	100	508.42	1	438	28	82	121	180.05354037603178,295.24066181881744,297.55565137926413,313.83195607856163,324.09641103915095	345.46077291755745,354.9692417521368,398.7230958894694,426.5486649275264,428.57236918118946	460.054818574515,478.7424288298645,482.1317088332515,495.99205033272176,500.45909077660303	510.2073215445695,510.26998645650673,520.8787144569491,521.0449886322647	513.4918760826632,525.0498317121632,527.1055483588802	4,4,0,0,4,4	0,0,4,4,1,4	72.73,78.95,81.79	131.98,133.22,141.85	219.6,227.72,231.59	0
+
+
+Ba Dataset Example:
+id	clicks	others	riddle_1	riddle_2	riddle_3	riddle_4	riddle_5	back	commissions	distractionPot	distractionTimer	distractionWords	forward	left	omissions	om1	om2	om3	om4	om5	om6	right	p1a	p1b	p1c	p1m	p4a	p4b	p4c	p4d	p4m	p4m	p5a	p5b	p5c	p5d	p5m
+44	33	distractionPotStartedpickdistractionAlarmstopeddistractioAlarmStartedpickdistractionPotstopeddistractionPotStarteddistractionPotStarteddistractioAlarmStarteddistractionPotStartedPuzzle1distractionPotStarteddistractionPotStartedPuzzle1distractionPotStarteddistractionPotStartedPuzzle1distractionPotStarteddistractionPotStartedPuzzle1distractionPotStarteddistractionPotStartedpuzzle2distractionPotStartedpuzzle2distractionPotStartedpuzzle2puzzle2distractionPotStarteddistractionPotStarteddistractionPotStarteddistractionPotStartedpickpuzzle3puzzle2pickpuzzle3distractionPotStarteddistractionPotStartedPuzzle4Puzzle4distractionPotStartedPuzzle4distractionPotStartedPuzzle4Puzzle4distractionPotStarteddistractionPotStartedpickdistractionPotStartedpickpickdistractionPotStarteddistractionPotStarteddistractionPotStarteddistractionPotStarteddistractionPotStartedpickpickdistractionPotStartedpickpickdistractionPotStarteddistractionPotStarteddistractionPotStartedpickpickdistractionPotStarteddistractionPotStarteddistractionPotStartedcookcookcook	{5.76163864,7.52111864,8.767357,10.1667671}	{15.388833,16.3070412,19.28853}	{-19.203516,19.6647434}	{22.1595821,23.0713425,23.8440132,24.6764431,25.4667568}	{29.0115776,32.3960381,33.8755569,35.71771,38.3372879,38.3372879,38.3372879}	0.830925167	{0,0}	2.374036-2.848883-4.447627	-1.5433042.9503-2.994078-4.053238-4.577247-5.899848-6.007768-8.284176-8.724448-9.690692-9.925962-11.41737-12.76905-13.74265-14.7244-16.63559-17.1465-18.30457-18.52004-20.69146-21.37548-23.6737-24.24673-26.52199-26.68276-27.79668-29.32798-29.61902-30.56042		6.733.301	237.752.056	{0,0,2,2,9,0}	0	0	2	2	9	0	2.314.722	175,948	124,623,836	13,994,101	13,994,101	0,9117604	0,7726707	0,8324299	0,3235569	0,8025503	33,844,605	14,795,188	18,421,531	383372843,3	0	18,421,531
+
+Bb Dataset:
+is an already clustered dataset

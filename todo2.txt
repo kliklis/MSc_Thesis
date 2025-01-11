@@ -1,0 +1,7 @@
+-optimize Supervised(A)
+-create and optimize Unsupervised(A)
+-*make NN
+-make voting
+-make semi-supervised learning
+-make active learning
+-make main
