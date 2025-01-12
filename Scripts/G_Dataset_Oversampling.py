@@ -4,6 +4,58 @@ import numpy as np
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 
+def unlabeled_dataset_oversampling(dataset_path, size_increment_percentage):
+    """
+    Augments an unlabeled dataset with synthetic samples based on a size increment percentage.
+
+    Args:
+        dataset_path (str): Path to the unlabeled dataset (CSV format).
+        size_increment_percentage (float): Desired percentage increase in dataset size (e.g., 50 for 50%).
+
+    Returns:
+        pd.DataFrame: Augmented dataset including synthetic samples.
+    """
+    from sklearn.cluster import KMeans
+    from imblearn.over_sampling import SMOTE
+    from collections import Counter
+
+    # Import dataset
+    dataset = CustomUtils.import_dataset(file_path=dataset_path)
+
+    if dataset is None or dataset.empty:
+        raise ValueError("The dataset is None or empty. Cannot perform augmentation.")
+
+    CustomUtils.Log(f"Original dataset size: {dataset.shape[0]} rows.")
+
+    # Assign pseudo-labels using KMeans clustering
+    num_clusters = max(2, len(dataset) // 50)  # Choose clusters dynamically
+    kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+    pseudo_labels = kmeans.fit_predict(dataset)
+
+    # Count samples per pseudo-class
+    class_counts = Counter(pseudo_labels)
+    min_samples_per_class = min(class_counts.values())
+    
+    # Determine the appropriate k_neighbors for SMOTE
+    k_neighbors = max(1, min(min_samples_per_class - 1, 5))  # Ensure k_neighbors <= samples per class
+
+    # Determine desired number of samples
+    num_samples = int(len(dataset) * (size_increment_percentage / 100))
+
+    CustomUtils.Log(f"Applying SMOTE for {num_samples} synthetic samples with k_neighbors={k_neighbors}...")
+    smote = SMOTE(sampling_strategy=(num_samples / len(dataset)), k_neighbors=k_neighbors, random_state=42)
+    synthetic_data, _ = smote.fit_resample(dataset, pseudo_labels)
+
+    # Create DataFrame for synthetic data
+    synthetic_df = pd.DataFrame(synthetic_data, columns=dataset.columns)
+
+    # Combine original and synthetic datasets
+    augmented_dataset = pd.concat([dataset, synthetic_df[len(dataset):]], ignore_index=True)
+
+    CustomUtils.Log(f"Augmented dataset size: {augmented_dataset.shape[0]} rows.")
+
+    return augmented_dataset
+
 def autoencoder_dataset_oversampling(
     dataset_path,
     hidden_layer_size=None,

@@ -1,3 +1,4 @@
+import pandas as pd
 import A_Dataset_Generation
 import B_Dataset_Preprocessing
 import CustomUtils
@@ -57,38 +58,41 @@ def main():
     B_Semi_Supervised_Path="../Datasets/Ba_Unlabeled_Semi.csv"
 
     B_Clustered_Path="../Datasets/Bb_Clustered.csv"
-    B_SemiSupervised_Path="../Datasets/B_SemiSupervised.csv"
-    B_ActiveLearning_Path="../Datasets/B_ActiveLearning.csv"
+    B_Active_Learning_Path="../Datasets/B_ActiveLearning.csv"
     C_Labeled_Path="../Datasets/C_Labeled.csv"
 
-    selected_workflow = 'W2'
-    
+    selected_workflow = 'W10'
 
     if selected_workflow == 'W1':
 
         ### A - Dataset Generation
-        #Generate A_Labeled.csv Dataset
         A_Labeled_Dataset = A_Dataset_Generation.generate_dataset(
         num_players=1000,
         adhd_ratio=0.15,
         room_difficulty=0.6)
         dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset)
         CustomUtils.export_dataset(A_Labeled_Path,A_Labeled_Dataset )
+        
+        CustomUtils.log_break()
 
         ### B - Dataset Preprocessing
         A_Labeled_Dataset = CustomUtils.import_dataset(file_path=A_Labeled_Path)
         A_Labeled_Dataset_Preprocessed = B_Dataset_Preprocessing.process_dataset(A_Labeled_Dataset)
         dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset_Preprocessed)
         CustomUtils.export_dataset(A_Labeled_Preprocessed_Path, A_Labeled_Dataset_Preprocessed )
+        
+        CustomUtils.log_break(pause=True)
 
         ### C - Recursive Feature Elimination
-        A_Labeled_Dataset_Preprocessed = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Path)
+        '''A_Labeled_Dataset_Preprocessed = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Path)
         selected_features = C_Recursive_Feature_Elimination.perform_rfe_ranked(A_Labeled_Dataset_Preprocessed, 'has_adhd', n_features_to_select=round(dataset_info[0]*0.75))
         selected_features.append('has_adhd')
         A_Labeled_Dataset_Preprocessed_Selected_Features = A_Labeled_Dataset_Preprocessed#CustomUtils.keep_features(A_Labeled_Dataset_Preprocessed, selected_features)
         dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset_Preprocessed_Selected_Features)
         CustomUtils.export_dataset(A_Labeled_Preprocessed_Selected_Features_Path, A_Labeled_Dataset_Preprocessed_Selected_Features )
         CustomUtils.dict_to_yaml({'Selected Features':selected_features}, './Config/SelectedFeatures.yaml')
+        
+        CustomUtils.log_break()'''
 
         ### D - Hyperparameters Optimization
         A_Labeled_Dataset_Preprocessed_Selected_Features = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_Path)
@@ -96,6 +100,8 @@ def main():
         for i in range(3):
             optimized_hyperparameters = D_HyperparametersOptimization.optimize_hyperparameters(method_to_be_optimized=CustomUtils.methods[i])
             CustomUtils.dict_to_yaml(optimized_hyperparameters, './Config/OptimizedHyperparameters_'+CustomUtils.methods[i]+'.yaml')
+        
+        CustomUtils.log_break()
 
         ### E - Models Generation
         A_Labeled_Dataset_Preprocessed_Selected_Feature = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_Path)
@@ -103,6 +109,8 @@ def main():
         for i in range(3):
             model = E_Models_Generation.train_model(CustomUtils.methods[i], './Config/OptimizedHyperparameters_'+CustomUtils.methods[i]+'.yaml', A_Labeled_Dataset_Preprocessed_Selected_Features)#E_Models_Generation.select_model(0)
             CustomUtils.save_model(model, filename = '../Models/' + CustomUtils.methods[i]+'.pkl')
+        
+        CustomUtils.log_break()
 
         #E_Models_Generation.voting_predict()
             
@@ -110,12 +118,7 @@ def main():
         for i in range(3):
             F_Models_Validation.evaluate_model(A_Labeled_Preprocessed_Selected_Features_Path, '../Models/' + CustomUtils.methods[i]+'.pkl')
 
-        '''A_Dataset_Generation.main()
-        B_Dataset_ML_Friendly_Convertion.main()
-        C_Recursive_Feature_Elimination.main()
-        D_HyperparametersOptimization.main()
-        E_Models_Generation.main()
-        F_Models_Validation.main()'''
+        CustomUtils.log_break()
         
     elif selected_workflow == 'W2':
 
@@ -125,30 +128,116 @@ def main():
         dataset_info=CustomUtils.get_dataset_info(B_Unlabeled_Preprocessed_Dataset)
         CustomUtils.export_dataset(B_Unlabeled_Preprocessed_Path, B_Unlabeled_Preprocessed_Dataset )
         
-        input('Continue...')
-        
-        ### G - Dataset Oversampling
-        B_Unlabeled_Preprocessed_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_Preprocessed_Path)
-        B_Unlabeled_Oversampled_Dataset = G_Dataset_Oversampling.autoencoder_dataset_oversampling(B_Unlabeled_Preprocessed_Path, num_samples=0)
-
-        dataset_info=CustomUtils.get_dataset_info(B_Unlabeled_Dataset)
-        CustomUtils.export_dataset(B_Unlabeled_Oversampled_Path, B_Unlabeled_Oversampled_Dataset)
-
-        #input('Continue...')
+        CustomUtils.log_break()
 
         ### H - Semi-Supervised - Inference Labels (using imporeted Model)
-        B_Semi_Supervised_Dataset = H_Labels_Inferencing.label_unlabeled_dataset('../Models/' + CustomUtils.methods[1]+'.pkl', B_Unlabeled_Oversampled_Path)
+        B_Unlabeled_Preprocessed_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_Preprocessed_Path)
+        B_Semi_Supervised_Dataset = H_Labels_Inferencing.label_unlabeled_dataset('../Models/' + CustomUtils.methods[1]+'.pkl', B_Unlabeled_Preprocessed_Path)
         CustomUtils.export_dataset(B_Semi_Supervised_Path, B_Semi_Supervised_Dataset)
-        #input('Continue...')
+        
+        CustomUtils.log_break()
 
-        ### I - 
-        ### J
-        ### K
-        ### L
+        #combine A and Ba
+        #retrain
 
-    elif selected_workflow == 'W3':
+    elif selected_workflow == 'W10':
+        #generate A
+        #train a model on it
+        #predict labels to Ba
+
+        #i
+        #combine A+Ba
+        #retrain model
+        #ii
+        #add noise to Ba
+        #combine A+Ba
+        #retrain model
+
+        #see results
+
+        ### - - - - A
+        ### A - Dataset Generation(A)
+        A_Labeled_Dataset = A_Dataset_Generation.generate_dataset(
+        num_players=1000,
+        adhd_ratio=0.15,
+        room_difficulty=0.6)
+        dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset)
+        CustomUtils.export_dataset(A_Labeled_Path,A_Labeled_Dataset )
+        
+        CustomUtils.log_break()
+
+        ### B - Dataset Preprocessing(A)
+        A_Labeled_Dataset = CustomUtils.import_dataset(file_path=A_Labeled_Path)
+        A_Labeled_Dataset_Preprocessed = B_Dataset_Preprocessing.process_dataset(A_Labeled_Dataset)
+        dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset_Preprocessed)
+        CustomUtils.export_dataset(A_Labeled_Preprocessed_Path, A_Labeled_Dataset_Preprocessed )
+        
+        CustomUtils.log_break()
+
+        ### D - Hyperparameters Optimization
+        A_Labeled_Dataset_Preprocessed_Selected_Features = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_Path)
+
+        for i in range(3):
+            optimized_hyperparameters = D_HyperparametersOptimization.optimize_hyperparameters(method_to_be_optimized=CustomUtils.methods[i], trials=2)
+            CustomUtils.dict_to_yaml(optimized_hyperparameters, './Config/OptimizedHyperparameters_'+CustomUtils.methods[i]+'.yaml')
+        
+        CustomUtils.log_break()
+
+        ### E - Models Generation
+        A_Labeled_Dataset_Preprocessed_Selected_Feature = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_Path)
+        
+        for i in range(3):
+            model = E_Models_Generation.train_model(CustomUtils.methods[i], './Config/OptimizedHyperparameters_'+CustomUtils.methods[i]+'.yaml', A_Labeled_Dataset_Preprocessed_Selected_Features)#E_Models_Generation.select_model(0)
+            CustomUtils.save_model(model, filename = '../Models/' + CustomUtils.methods[i]+'.pkl')
+        
+        CustomUtils.log_break()
+
+        #E_Models_Generation.voting_predict()
+        #a function that given voting weights and list of models paths predicts/trains thems
+            
+        ### F - Models Evaluation
+        for i in range(3):
+            F_Models_Validation.evaluate_model(A_Labeled_Preprocessed_Selected_Features_Path, '../Models/' + CustomUtils.methods[i]+'.pkl')
+
+        CustomUtils.log_break()
+
+
+        ### - - - - Ba
+        ### B - Dataset Preprocessing(Ba)
+        B_Unlabeled_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_Path)
+        B_Unlabeled_Preprocessed_Dataset = B_Dataset_Preprocessing.process_dataset(B_Unlabeled_Dataset)
+        dataset_info=CustomUtils.get_dataset_info(B_Unlabeled_Preprocessed_Dataset)
+        CustomUtils.export_dataset(B_Unlabeled_Preprocessed_Path, B_Unlabeled_Preprocessed_Dataset )
+        
+        CustomUtils.log_break()
+
+        ### H - Labels Inferencing(A,Ba)
+        B_Unlabeled_Preprocessed_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_Preprocessed_Path)
+        B_Semi_Supervised_Dataset = H_Labels_Inferencing.label_unlabeled_dataset('../Models/' + CustomUtils.methods[1]+'.pkl', B_Unlabeled_Preprocessed_Path)
+        CustomUtils.export_dataset(B_Semi_Supervised_Path, B_Semi_Supervised_Dataset)
+        
+        CustomUtils.log_break()
+
+        ### XX - Combine Datasets(A,Ba)
+        A_Labeled_Dataset_Preprocessed = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Path)
+        B_Unlabeled_Preprocessed_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_Preprocessed_Path)
+        C_Labeled_Preprocessed_Dataset = pd.concat([B_Unlabeled_Preprocessed_Dataset, A_Labeled_Dataset_Preprocessed], axis=0)
+
+        CustomUtils.log_break()
+
+        ### XX - Validate (Ca)
+       
+        CustomUtils.log_break()
+
+        #do the same for Bb
+
+
         pass
-    elif selected_workflow == 'W4':
+    elif selected_workflow == 'W11':
+        #visualize Ba with PCA
+        #cluster Ba
+        #see if Clusters overlap PCA Dense places
+
         pass
 
 

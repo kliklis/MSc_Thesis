@@ -69,7 +69,7 @@ def process_dataset(dataset):
     # Reorder columns to match the original order
     final_columns = [col for col in original_columns if col in df.columns] + [col for col in df.columns if col not in original_columns]
     df = df[final_columns]
-    
+
     # Handle missing values
     df = CustomUtils.handle_missing_values(df)
 

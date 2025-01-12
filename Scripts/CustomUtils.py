@@ -1,5 +1,6 @@
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import joblib
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
@@ -29,6 +30,12 @@ def Log(message):
         return
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"[{current_time}] {message}")
+
+def log_break(message='\n', pause=False):
+    if pause:
+        input(message)
+    else:
+        print(message)
 
 def import_dataset(file_path='A_Labeled.csv'):
     Log("Importing dataset...")
@@ -160,3 +167,25 @@ def yaml_to_dict(file_path):
     except Exception as e:
         Log(f"Unexpected error: {e}")
     return None
+
+def add_noise(file_path, noise_level=0.05):
+    Log("Adding noise to the dataset...")
+    try:
+        dataset = import_dataset(file_path)
+        numeric_columns = dataset.select_dtypes(include=['float64', 'int64']).columns
+        
+        for col in numeric_columns:
+            # Determine if column contains single or multiple values
+            if dataset[col].dtype == 'int64':
+                noise = (np.random.normal(loc=0, scale=noise_level * dataset[col].std(), size=dataset[col].shape)).astype(int)
+                dataset[col] += noise
+            elif dataset[col].dtype == 'float64':
+                noise = np.random.normal(loc=0, scale=noise_level * dataset[col].std(), size=dataset[col].shape)
+                dataset[col] += noise
+        
+        Log("Noise added successfully.")
+        return dataset
+    except Exception as e:
+        Log(f"Error adding noise: {e}")
+        return None
+

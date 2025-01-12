@@ -41,15 +41,6 @@ def label_unlabeled_dataset(model_path, unlabeled_dataset_path):
         CustomUtils.Log(f"Error during prediction: {e}")
         return
 
-    # Export the labeled dataset to the same path
-    CustomUtils.Log(f"Saving labeled dataset to {unlabeled_dataset_path}...")
-    try:
-        CustomUtils.export_dataset(unlabeled_dataset_path, dataset)
-        CustomUtils.Log(f"Labeled dataset saved successfully to {unlabeled_dataset_path}.")
-    except Exception as e:
-        CustomUtils.Log(f"Error exporting labeled dataset: {e}")
-        return
-
     return dataset
 
 def main():

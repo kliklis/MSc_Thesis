@@ -141,9 +141,9 @@ def objective(trial, method = CustomUtils.methods[0]):
     
     return score
 
-def optimize_hyperparameters(method_to_be_optimized=CustomUtils.methods[0]):
+def optimize_hyperparameters(method_to_be_optimized=CustomUtils.methods[0], trials = 100):
     study = optuna.create_study(direction="maximize")
-    study.optimize(lambda trial: objective(trial, method=method_to_be_optimized), n_trials=2)
+    study.optimize(lambda trial: objective(trial, method=method_to_be_optimized), n_trials=trials)
 
     # Print the best hyperparameters
     print("\nBest trial:")

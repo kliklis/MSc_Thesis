@@ -1,6 +1,6 @@
 algorithm: kd_tree
-leaf_size: 34
-metric: euclidean
-n_neighbors: 2
+leaf_size: 41
+metric: chebyshev
+n_neighbors: 1
 p: 2
 weights: uniform

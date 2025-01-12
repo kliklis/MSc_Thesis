@@ -1,0 +1,9 @@
+-make main config file
+wf1
+-create and optimize Unsupervised(A)
+-*make NN
+-make voting
+wf2+
+-make data augmentation (Bb_Clustered) - "Bc_Clustered_Augmented"
+-make semi-supervised learning (Ba_Unlabeled) - "Bd_Unclustered_Semi"
+-make active learning (Bb_Clustered) - "Be_Unclastured_Active"

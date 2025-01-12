@@ -302,6 +302,8 @@ def select_model(algorithm_index=0):
         print(f"  metric_params: {model.metric_params}")
         print(f"  n_jobs: {model.n_jobs}")
         print("________________\n")
+    elif algorithm_index == 3:  # ensemble
+        CustomUtils.Log("Voting algorithm selected...")
         
     return model
 
