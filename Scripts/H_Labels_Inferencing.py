@@ -1,32 +1,64 @@
 import pandas as pd
 import joblib
+import CustomUtils
 
-def load_model(model_path):
-    return joblib.load(model_path)
+def label_unlabeled_dataset(model_path, unlabeled_dataset_path):
+    """
+    Labels an unlabeled dataset using a pre-trained model and exports it with a new column 'has_adhd'.
 
-def load_dataset(file_path):
-    return pd.read_csv(file_path)
+    Args:
+        model_path (str): Path to the saved model file.
+        unlabeled_dataset_path (str): Path to the unlabeled dataset (CSV file).
 
-def preprocess_data(df):
-    return df.drop(columns=['has_adhd'], errors='ignore')
+    Returns:
+        pd.DataFrame: The labeled dataset with the 'has_adhd' column added.
+    """
+    import os
 
-def predict_labels(model, data):
-    return model.predict(data)
+    # Log the process
+    CustomUtils.Log(f"Loading model from {model_path}...")
+    try:
+        model = joblib.load(model_path)
+        CustomUtils.Log("Model loaded successfully.")
+    except FileNotFoundError:
+        CustomUtils.Log(f"Error: Model file {model_path} not found.")
+        return
 
-def save_predictions(df, predictions, output_path):
-    df['has_adhd'] = predictions
-    df.to_csv(output_path, index=False)
+    # Load the unlabeled dataset
+    CustomUtils.Log(f"Loading unlabeled dataset from {unlabeled_dataset_path}...")
+    dataset = CustomUtils.import_dataset(unlabeled_dataset_path)
+    if dataset is None:
+        CustomUtils.Log("Failed to load the unlabeled dataset. Exiting...")
+        return
+
+    # Perform predictions
+    CustomUtils.Log("Predicting labels for the unlabeled dataset...")
+    try:
+        predictions = model.predict(dataset)
+        dataset['has_adhd'] = predictions
+        CustomUtils.Log("Labels predicted successfully.")
+    except Exception as e:
+        CustomUtils.Log(f"Error during prediction: {e}")
+        return
+
+    # Export the labeled dataset to the same path
+    CustomUtils.Log(f"Saving labeled dataset to {unlabeled_dataset_path}...")
+    try:
+        CustomUtils.export_dataset(unlabeled_dataset_path, dataset)
+        CustomUtils.Log(f"Labeled dataset saved successfully to {unlabeled_dataset_path}.")
+    except Exception as e:
+        CustomUtils.Log(f"Error exporting labeled dataset: {e}")
+        return
+
+    return dataset
 
 def main():
-    model_path = '../Models/Random Forest.pkl'
-    input_csv = '../Datasets/Ba_Unlabeled.csv'#'A_Labeled_Preprocessed.csv'
-    output_csv = '../Datasets/'+input_csv[:-3]+'_Predicted.csv'
+    # Define paths
+    model_path = '../Models/Random_Forest.pkl'  # Example path to a trained model
+    unlabeled_dataset_path = '../Datasets/B_Unlabeled.csv'  # Path to the unlabeled dataset
 
-    model = load_model(model_path)
-    dataset = load_dataset(input_csv)
-    features = preprocess_data(dataset)
-    predictions = predict_labels(model, features)
-    save_predictions(dataset, predictions, output_csv)
+    # Label the unlabeled dataset
+    label_unlabeled_dataset(model_path, unlabeled_dataset_path)
 
 if __name__ == "__main__":
     main()

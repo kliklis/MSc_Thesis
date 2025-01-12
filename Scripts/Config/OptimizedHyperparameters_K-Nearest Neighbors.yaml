@@ -1,6 +1,6 @@
-algorithm: ball_tree
-leaf_size: 22
-metric: minkowski
-n_neighbors: 8
-p: 1
+algorithm: kd_tree
+leaf_size: 34
+metric: euclidean
+n_neighbors: 2
+p: 2
 weights: uniform

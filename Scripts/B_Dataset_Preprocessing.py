@@ -44,20 +44,27 @@ def process_dataset(dataset):
     df[omission_cols] = dataset["ommision_errors"].str.split(",", expand=True).astype(float)
 
     # Manually splitting `commision_errors` into six columns
-    commission_cols = ["commision_1", "commision_2", "commision_3", "commision_4", "commision_5", "commision_6"]
+    commission_cols = ["commision_1", "commision_2", "commision_3"]
     df[commission_cols] = dataset["commision_errors"].str.split(",", expand=True).astype(float)
 
-    # Manually splitting `distraction_1_timestamps` into three columns
-    distraction_1_cols = ["distraction_1_1", "distraction_1_2", "distraction_1_3"]
-    df[distraction_1_cols] = dataset["distraction_1_timestamps"].str.split(",", expand=True).astype(float)
+    # Handle distraction features
+    distraction_features = ['distraction_1_timestamps', 'distraction_2_timestamps', 'distraction_3_timestamps']
 
-    # Manually splitting `distraction_2_timestamps` into three columns
-    distraction_2_cols = ["distraction_2_1", "distraction_2_2", "distraction_2_3"]
-    df[distraction_2_cols] = dataset["distraction_2_timestamps"].str.split(",", expand=True).astype(float)
+    for feature in distraction_features:
+        if feature in dataset.columns:
+            # Split the values into a list
+            distraction_split = dataset[feature].dropna().apply(lambda x: list(map(float, x.split(','))) if isinstance(x, str) else [])
 
-    # Manually splitting `distraction_3_timestamps` into three columns
-    distraction_3_cols = ["distraction_3_1", "distraction_3_2", "distraction_3_3"]
-    df[distraction_3_cols] = dataset["distraction_3_timestamps"].str.split(",", expand=True).astype(float)
+            # Extract first and last values
+            df[f'{feature}_first'] = distraction_split.apply(lambda x: x[0] if x else np.nan)
+            df[f'{feature}_last'] = distraction_split.apply(lambda x: x[-1] if x else np.nan)
+
+            # Extract statistics for the rest of the values (excluding first and last)
+            df[f'{feature}_mean'] = distraction_split.apply(lambda x: np.mean(x[1:-1]) if len(x) > 2 else np.nan)
+            df[f'{feature}_std'] = distraction_split.apply(lambda x: np.std(x[1:-1]) if len(x) > 2 else np.nan)
+            df[f'{feature}_min'] = distraction_split.apply(lambda x: np.min(x[1:-1]) if len(x) > 2 else np.nan)
+            df[f'{feature}_max'] = distraction_split.apply(lambda x: np.max(x[1:-1]) if len(x) > 2 else np.nan)
+            df[f'{feature}_count'] = distraction_split.apply(lambda x: len(x[1:-1]) if len(x) > 2 else 0)
 
     # Reorder columns to match the original order
     final_columns = [col for col in original_columns if col in df.columns] + [col for col in df.columns if col not in original_columns]

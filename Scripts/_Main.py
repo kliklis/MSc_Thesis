@@ -1,5 +1,5 @@
 import A_Dataset_Generation
-import B_Dataset_ML_Friendly_Convertion
+import B_Dataset_Preprocessing
 import CustomUtils
 import C_Recursive_Feature_Elimination
 import D_HyperparametersOptimization
@@ -48,54 +48,57 @@ G_Labels_Prediction_Ba: exports Ba_PredictedLabels
 
 def main():
 
-    A_Labeled_path="../Datasets/A_Labeled.csv"
-    A_Labeled_Preprocessed_path="../Datasets/A_Labeled_Preprocessed.csv"
-    A_Labeled_Preprocessed_Selected_Features_path="../Datasets/A_Labeled_Preprocessed_Selected_Features.csv"
-    B_Unlabeled_path="../Datasets/B_Unlabeled.csv"
-    B_Unlabeled_Oversampled_path="../Datasets/B_Unlabeled_Oversampled.csv"
-    B_Clustered_path="../Datasets/B_Clustered.csv"
-    B_SemiSupervised_path="../Datasets/B_SemiSupervised.csv"
-    B_ActiveLearning_path="../Datasets/B_ActiveLearning.csv"
-    C_Labeled_path="../Datasets/C_Labeled.csv"
+    A_Labeled_Path="../Datasets/A_Labeled.csv"
+    A_Labeled_Preprocessed_Path="../Datasets/A_Labeled_Preprocessed.csv"
+    A_Labeled_Preprocessed_Selected_Features_Path="../Datasets/A_Labeled_Preprocessed_Selected_Features.csv"
+    B_Unlabeled_Path="../Datasets/Ba_Unlabeled.csv"
+    B_Unlabeled_Preprocessed_Path="../Datasets/Ba_Unlabeled_Preprocessed.csv"
+    B_Unlabeled_Oversampled_Path="../Datasets/Ba_Unlabeled_Oversampled.csv"
+    B_Semi_Supervised_Path="../Datasets/Ba_Unlabeled_Semi.csv"
 
-    selected_workflow = 'W1'
+    B_Clustered_Path="../Datasets/Bb_Clustered.csv"
+    B_SemiSupervised_Path="../Datasets/B_SemiSupervised.csv"
+    B_ActiveLearning_Path="../Datasets/B_ActiveLearning.csv"
+    C_Labeled_Path="../Datasets/C_Labeled.csv"
+
+    selected_workflow = 'W2'
     
 
     if selected_workflow == 'W1':
 
-        ### A
+        ### A - Dataset Generation
         #Generate A_Labeled.csv Dataset
         A_Labeled_Dataset = A_Dataset_Generation.generate_dataset(
         num_players=1000,
         adhd_ratio=0.15,
         room_difficulty=0.6)
         dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset)
-        CustomUtils.export_dataset(A_Labeled_path,A_Labeled_Dataset )
+        CustomUtils.export_dataset(A_Labeled_Path,A_Labeled_Dataset )
 
-        ### B
-        A_Labeled_Dataset = CustomUtils.import_dataset(file_path=A_Labeled_path)
-        A_Labeled_Dataset_Preprocessed = B_Dataset_ML_Friendly_Convertion.process_dataset(A_Labeled_Dataset)
+        ### B - Dataset Preprocessing
+        A_Labeled_Dataset = CustomUtils.import_dataset(file_path=A_Labeled_Path)
+        A_Labeled_Dataset_Preprocessed = B_Dataset_Preprocessing.process_dataset(A_Labeled_Dataset)
         dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset_Preprocessed)
-        CustomUtils.export_dataset(A_Labeled_Preprocessed_path, A_Labeled_Dataset_Preprocessed )
+        CustomUtils.export_dataset(A_Labeled_Preprocessed_Path, A_Labeled_Dataset_Preprocessed )
 
-        ### C
-        A_Labeled_Dataset_Preprocessed = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_path)
+        ### C - Recursive Feature Elimination
+        A_Labeled_Dataset_Preprocessed = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Path)
         selected_features = C_Recursive_Feature_Elimination.perform_rfe_ranked(A_Labeled_Dataset_Preprocessed, 'has_adhd', n_features_to_select=round(dataset_info[0]*0.75))
         selected_features.append('has_adhd')
-        A_Labeled_Dataset_Preprocessed_Selected_Features = CustomUtils.keep_features(A_Labeled_Dataset_Preprocessed, selected_features)
+        A_Labeled_Dataset_Preprocessed_Selected_Features = A_Labeled_Dataset_Preprocessed#CustomUtils.keep_features(A_Labeled_Dataset_Preprocessed, selected_features)
         dataset_info=CustomUtils.get_dataset_info(A_Labeled_Dataset_Preprocessed_Selected_Features)
-        CustomUtils.export_dataset(A_Labeled_Preprocessed_Selected_Features_path, A_Labeled_Dataset_Preprocessed_Selected_Features )
+        CustomUtils.export_dataset(A_Labeled_Preprocessed_Selected_Features_Path, A_Labeled_Dataset_Preprocessed_Selected_Features )
         CustomUtils.dict_to_yaml({'Selected Features':selected_features}, './Config/SelectedFeatures.yaml')
 
-        ### D
-        A_Labeled_Dataset_Preprocessed_Selected_Features = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_path)
+        ### D - Hyperparameters Optimization
+        A_Labeled_Dataset_Preprocessed_Selected_Features = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_Path)
 
         for i in range(3):
             optimized_hyperparameters = D_HyperparametersOptimization.optimize_hyperparameters(method_to_be_optimized=CustomUtils.methods[i])
             CustomUtils.dict_to_yaml(optimized_hyperparameters, './Config/OptimizedHyperparameters_'+CustomUtils.methods[i]+'.yaml')
 
-        ### E
-        A_Labeled_Dataset_Preprocessed_Selected_Feature = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_path)
+        ### E - Models Generation
+        A_Labeled_Dataset_Preprocessed_Selected_Feature = CustomUtils.import_dataset(file_path=A_Labeled_Preprocessed_Selected_Features_Path)
         
         for i in range(3):
             model = E_Models_Generation.train_model(CustomUtils.methods[i], './Config/OptimizedHyperparameters_'+CustomUtils.methods[i]+'.yaml', A_Labeled_Dataset_Preprocessed_Selected_Features)#E_Models_Generation.select_model(0)
@@ -103,10 +106,9 @@ def main():
 
         #E_Models_Generation.voting_predict()
             
-        ### F
+        ### F - Models Evaluation
         for i in range(3):
-            F_Models_Validation.evaluate_model(A_Labeled_Preprocessed_Selected_Features_path, '../Models/' + CustomUtils.methods[i]+'.pkl')
-            input('Continue...')
+            F_Models_Validation.evaluate_model(A_Labeled_Preprocessed_Selected_Features_Path, '../Models/' + CustomUtils.methods[i]+'.pkl')
 
         '''A_Dataset_Generation.main()
         B_Dataset_ML_Friendly_Convertion.main()
@@ -116,16 +118,34 @@ def main():
         F_Models_Validation.main()'''
         
     elif selected_workflow == 'W2':
-        ### G
-        B_Unlabeled_Dataset = G_Dataset_Oversampling.ovesample_dataset(file_path=B_Unlabeled_path)
-        dataset_info=CustomUtils.get_dataset_info(B_Unlabeled_Dataset)
-        CustomUtils.export_dataset(B_Unlabeled_Oversampled_path, B_Unlabeled_Dataset)
 
-        ### B
-        B_Unlabeled_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_path)
-        B_Unlabeled_Dataset_Preprocessed = B_Dataset_ML_Friendly_Convertion.process_dataset(B_Unlabeled_Dataset)
-        dataset_info=CustomUtils.get_dataset_info(B_Unlabeled_Dataset_Preprocessed)
-        CustomUtils.export_dataset(A_Labeled_Preprocessed_path, A_Labeled_Dataset_Preprocessed )
+        ### B - Dataset Preprocessing
+        B_Unlabeled_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_Path)
+        B_Unlabeled_Preprocessed_Dataset = B_Dataset_Preprocessing.process_dataset(B_Unlabeled_Dataset)
+        dataset_info=CustomUtils.get_dataset_info(B_Unlabeled_Preprocessed_Dataset)
+        CustomUtils.export_dataset(B_Unlabeled_Preprocessed_Path, B_Unlabeled_Preprocessed_Dataset )
+        
+        input('Continue...')
+        
+        ### G - Dataset Oversampling
+        B_Unlabeled_Preprocessed_Dataset = CustomUtils.import_dataset(file_path=B_Unlabeled_Preprocessed_Path)
+        B_Unlabeled_Oversampled_Dataset = G_Dataset_Oversampling.autoencoder_dataset_oversampling(B_Unlabeled_Preprocessed_Path, num_samples=0)
+
+        dataset_info=CustomUtils.get_dataset_info(B_Unlabeled_Dataset)
+        CustomUtils.export_dataset(B_Unlabeled_Oversampled_Path, B_Unlabeled_Oversampled_Dataset)
+
+        #input('Continue...')
+
+        ### H - Semi-Supervised - Inference Labels (using imporeted Model)
+        B_Semi_Supervised_Dataset = H_Labels_Inferencing.label_unlabeled_dataset('../Models/' + CustomUtils.methods[1]+'.pkl', B_Unlabeled_Oversampled_Path)
+        CustomUtils.export_dataset(B_Semi_Supervised_Path, B_Semi_Supervised_Dataset)
+        #input('Continue...')
+
+        ### I - 
+        ### J
+        ### K
+        ### L
+
     elif selected_workflow == 'W3':
         pass
     elif selected_workflow == 'W4':

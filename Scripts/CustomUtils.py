@@ -55,6 +55,29 @@ def save_model(model, filename='_model.pkl'):
     Log("Process completed. Model saved as " + filename + ".")
 
 def handle_missing_values(dataset):
+    # Drop columns with all missing values
+    missing_cols = dataset.columns[dataset.isna().all()]
+    dataset = dataset.dropna(axis=1, how="all")
+    print(f"Dropped columns with all missing values: {list(missing_cols)}")
+    
+    # Drop columns with constant values
+    #constant_cols = dataset.columns[dataset.nunique() <= 1]
+    #dataset = dataset.drop(columns=constant_cols)
+    #print(f"Dropped constant columns: {list(constant_cols)}")
+    
+    # Impute missing values for remaining columns
+    imputer = SimpleImputer(strategy="mean")
+    numeric_data = dataset.select_dtypes(include=['float64', 'int64'])
+    imputed_data = imputer.fit_transform(numeric_data)
+    numeric_imputed = pd.DataFrame(imputed_data, columns=numeric_data.columns)
+    
+    # Combine numeric and non-numeric columns
+    non_numeric_data = dataset.select_dtypes(exclude=['float64', 'int64'])
+    dataset_imputed = pd.concat([numeric_imputed, non_numeric_data], axis=1)
+    
+    return dataset_imputed
+
+def handle_missing_values_2(dataset):
     if dataset.isna().any().any():
         Log("Handling missing values...")
         imputer = SimpleImputer(strategy='mean')
